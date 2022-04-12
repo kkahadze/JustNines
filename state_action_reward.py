@@ -35,6 +35,7 @@ def actions():
 def rewards(states, actions):
     
     R = np.zeros((len(states), len(actions)))
+    
     for i in range(len(states)): # rewards! (end state) setting
         R[len(states - 1)] = 1 # entire row of predicted value set to 1
 

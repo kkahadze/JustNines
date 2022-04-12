@@ -61,21 +61,18 @@ class Player(object):
         self.state        = dict()
         self.actions      = dict()
         self.action       = 0
-        agent.prev_state  = 0
-    
+        agent.prev_state  = 0   
         
-    def identify_state(self, ord, ):
+    def identify_state(self, hand):
         """
         The state of the player is identified by looping through players' hand for each property of the state.
         """
         self.state = dict()
-        self.state["ord"] = self.get_place_in_playing_order(player)
-        self.state["wls"] = self.get_wildsuit() # value of this variable will be 4 if no wildsuit exists
-        self.state["cdt"] = self.cards_dealt
-        self.state["tot"] = len(self.users[player].cards)
-        self.state["wds"] = len(list(filter(lambda x: x.suit == self.state["wls"] and not x.value == 13, self.users[player].cards)))
-        self.state["jok"] = len(list(filter(lambda x: x.value == 13, self.users[player].cards)))
-        self.state["btl"] = int(self.beatable(player, prev_cards) == True)
+        self.state["ord"] = hand.get_place_in_playing_order(self.id)
+        self.state["tot"] = len(self.cards)
+        self.state["jok"] = len(list(filter(lambda x: x.value == 13, self.cards)))
+        self.state["btl"] = int(hand.beatable(self) == True)
+        self.state['tmc'] = unimplemented()
 
     def identify_action(self):
         """
@@ -161,7 +158,6 @@ class Turn(object):
         self.card_open = self.deck.draw_from_deck()
         self.start_up()
     
-    
     def start_up(self):
         while self.card_open.value not in range(0,10):
             print (f'Inital open card {self.card_open.print_card()} has to be normal')
@@ -173,7 +169,6 @@ class Turn(object):
             self.player_1.draw(self.deck, self.card_open)
             self.player_2.draw(self.deck, self.card_open)
             
-    
     def action(self, player, opponent):
         """
         Only reflecting the active players' action if he hand has not won yet.
@@ -224,26 +219,55 @@ class Turn(object):
 # 6. Hand
 # -------------------------------------------------------------------------
 
-class Hand(object):
+class Hand(object): # Where are we resetting self.first_suit
     """
-    A game reflects an iteration of turns, until one player fulfills the winning condition of 0 hand cards.
+    A hand reflects an iteration of turns.
     It initialized with two players and a turn object.
     """
     
-    def __init__(self, starting_player):
+    def __init__(self):
+        self.dealer = random.randint(0, 3)
+        self.starting_player = (self.dealer + 1) % 4
         self.turn = Turn(deck = Deck())
+        self.prev_cards = []
+        self.first_suit = 5
 
         # Playing all turns for one hand
         while self.winner == 0: 
-            self.turn.action(player = player_act) 
+            self.turn.action()
+            self.prev_cards = []
             
-            if check_win(player_act) == True:
-               
-
-        self.player_1.identify_state(card_open)
+        self.player_1.identify_state()
         agent.update(self.player_1.state, self.player_1.action)
                 
+    def get_place_in_playing_order(self, player_id):
+        '''
+            Returns an integer 0-3
+        '''
+        start = self.starting_player
+        out = 5
+        for i in range(0,4):
+            if (start + i) % 4 == player_id:
+                out = i
+        return out
 
+    def beatable(self, player):
+        # How do we tell if a player can beat a hand with no wilds?
+        # Either 
+            # They have a Joker
+            # They are the first to play
+            # They have a higher first suit than all others
+
+        if len(list(filter(lambda x: x.value == 13))) > 0 :
+            return True
+        if self.get_place_in_playing_order(player) == 0:
+            return True
+
+        cards = self.users[player].cards
+        if [1 if len(list(filter(lambda x : x.suit == self.first_suit and (x.value > card.value and card.suit == self.first_suit ) , cards))) > 0 else 0 for card in self.prev_cards].count(0) > 0:
+            return False
+        else:
+            return True
 
 # 7. Tournament
 # -------------------------------------------------------------------------
