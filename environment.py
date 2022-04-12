@@ -71,15 +71,28 @@ class Player(object):
         self.state["ord"] = hand.get_place_in_playing_order(self.id)
         self.state["tot"] = len(self.cards)
         self.state["jok"] = len(list(filter(lambda x: x.value == 13, self.cards)))
-        self.state["btl"] = int(hand.beatable(self) == True)
-        self.state['tmc'] = unimplemented()
+        self.state["btl"] = int(hand.beatable(self.id))
+        self.state['tmc'] = self.taken = self.called
 
-    def identify_action(self):
+    def identify_action(self, hand):
         """
         All actions are evaluated if they are available to the player, dependent on his hand and card_open.
         """
-              
-    def play_agent(self):
+        self.actions = dict()
+        acts = ["STRG-BEAT", "WEAK-BEAT", "STRG-LOSS", "WEAK-LOSS"]
+        for i, act in enumerate(acts):
+            if i < 2:
+                if self.state['btl'] != 0:
+                    self.actions[act] = 1
+                else:
+                    self.actions[act] = 0
+            else:  
+                if hand.loseable():
+                    self.actions[act] == 1
+                else:
+                    self.actions[act] = 0
+
+    def play_agent(self, hand):
         """
         Reflecting a players' intelligent move supported by the RL-algorithm, that consists of:
             - Identification of the players' state and available actions
@@ -93,14 +106,14 @@ class Player(object):
         """
         
         # Identify state & actions for action selection
-        self.identify_state()
-        self.identify_action()
+        self.identify_state(hand)
+        self.identify_action(hand)
         
         # Agent selects action
         self.action = agent.step(self.state, self.actions)
 
         # Selected action searches corresponding card
-        
+        being_played = self.choose_card(hand)
         # Selected card is played
         self.card_play = card
         self.hand.remove(card)
@@ -109,8 +122,7 @@ class Player(object):
         
         # Update Q Value           
         if algorithm == "q-learning":
-            agent.update(self.state, self.action)
-           
+            agent.update(self.state, self.action, (len(self.cards) == 0 and self.taken == self.called))
 
     def play_rand(self, deck):
         """
@@ -135,6 +147,24 @@ class Player(object):
         if (self.card_play.color == "WILD") or (self.card_play.value == "PL4"):
             self.card_play.color = self.choose_color()
             
+    def choose_card(self, hand):
+        playable = self.playable(hand.first_suit)
+        if self.action == 'STRG-BEAT':
+            self.choose_strg_beat(playable, hand)
+        elif self.action == 'WEAK-BEAT':
+            self.choose_weak_beat(playable, hand)
+        elif self.action == 'STRG-LOSS':
+            self.choose_strg_loss(playable, hand)
+        elif self.action == 'WEAK-LOSS':
+            self.choose_weak_loss(playable, hand)
+
+    def playable(self, first_suit):
+        firsts = list(filter(lambda x: x.suit == first_suit and not x.value == 13, self.cards))
+        if len(firsts) == 0:
+            return self.cards
+        else:
+            firsts.extend(list(filter(lambda x: x.value == 13, self.cards)))
+            return firsts
 
 # 5. Turn
 # -------------------------------------------------------------------------
@@ -147,70 +177,38 @@ class Turn(object):
         - Counter action by oposite player in case of PL2 or PL4
     """
     
-    def __init__(self, deck, player_1, player_2):
+    def __init__(self,): # need to set last_taker somewhere
         """
         Turn is initialized with standard deck, players and an open card
         """
         
         self.deck = deck
-        self.player_1 = player_1
-        self.player_2 = player_2
         self.card_open = self.deck.draw_from_deck()
+        self.last_taker = None
         self.start_up()
     
     def start_up(self):
-        while self.card_open.value not in range(0,10):
-            print (f'Inital open card {self.card_open.print_card()} has to be normal')
-            self.card_open = self.deck.draw_from_deck()
-        
-        print (f'Inital open card is {self.card_open.print_card()}\n') 
-        
         for i in range (7):
             self.player_1.draw(self.deck, self.card_open)
             self.player_2.draw(self.deck, self.card_open)
             
-    def action(self, player, opponent):
+    def action(self, hand, player):
         """
         Only reflecting the active players' action if he hand has not won yet.
         Only one player is leveraging the RL-algorithm, while the other makes random choices.
         """
-        
-        player_act = player
-        player_pas = opponent
-        player_act.evaluate_hand(self.card_open)
-
         self.count = 0
         
-        # (1) When player can play a card directly
-        if len(player_act.hand_play) > 0:
-            
-            if player_act == self.player_1:
-                player_act.play_agent(self.deck, self.card_open)
-            else:
-                player_act.play_rand(self.deck)
-                
-            self.card_open = player_act.card_play
-            player_act.evaluate_hand(self.card_open)
 
-        # (2) When player has to draw a card
+        if player == 0:
+            hand.users[player].play_agent(hand)
         else:
-            print (f'{player_act.name} has no playable card')
-            player_act.draw(self.deck, self.card_open)
+            hand.users[player].play_rand(self.deck)
             
-            # (2a) When player draw a card that is finally playable
-            if len(player_act.hand_play) > 0:
-                
-                if player_act == self.player_1:
-                    player_act.play_agent(self.deck, self.card_open)
-                else:
-                    player_act.play_rand(self.deck)
-                
-                self.card_open = player_act.card_play
-                player_act.evaluate_hand(self.card_open)
-            
-            # (2b) When player has not drawn a playable card, do nothing
-            else:
-                player_act.card_play = Card(0,0)
+        self.card_open = player_act.card_play
+        player_act.evaluate_hand(self.card_open)
+
+
         
         if check_win(player_act) == True: return
         if check_win(player_pas) == True: return
@@ -233,12 +231,14 @@ class Hand(object): # Where are we resetting self.first_suit
         self.first_suit = 5
 
         # Playing all turns for one hand
-        while self.winner == 0: 
-            self.turn.action()
-            self.prev_cards = []
+        for i in range(9): # Representing 9 turns
+            for j in range(4): # Representing 4 "actions" per turn
+                self.turn.action(self, (self.starting_player + j) % 4)
+                self.prev_cards = []
+                self.starting_player = self.turn.last_taker
             
-        self.player_1.identify_state()
-        agent.update(self.player_1.state, self.player_1.action)
+        self.users[0].identify_state()
+        agent.update(self.users[0].state, self.users[0].action)
                 
     def get_place_in_playing_order(self, player_id):
         '''
@@ -265,6 +265,18 @@ class Hand(object): # Where are we resetting self.first_suit
 
         cards = self.users[player].cards
         if [1 if len(list(filter(lambda x : x.suit == self.first_suit and (x.value > card.value and card.suit == self.first_suit ) , cards))) > 0 else 0 for card in self.prev_cards].count(0) > 0:
+            return False
+        else:
+            return True
+
+    def loseable(self, player):
+        # if len(list(filter(lambda x: x.value == 13))) > 0 : # Must change when Joker rules are updated
+            # return True
+        if self.get_place_in_playing_order(player) == 0:
+            return True
+        if len(list(filter(lambda x: x.suit == self.first_suit, self.users[player].cards))) == 0:
+            return True
+        if [1 if len(list(filter(lambda x : x.suit == self.first_suit and (x.value < card.value and card.suit == self.first_suit ) , self.users[player].cards))) > 0 else 0 for card in self.prev_cards].count(0) > 0:
             return False
         else:
             return True
