@@ -168,29 +168,58 @@ class Player(object):
             firsts.extend(list(filter(lambda x: x.value == 13, self.cards)))
             return firsts
         
-    def choose_strg_beat(self, playable, hand):
-        highest = None
+    def choose_strg_beat(self, playable, hand): # check if first player for each of these functions
+        highest = Card(0, 5)
         for card in playable:
             if card.value == 13:
                 return card
             elif card.value > highest.value and (card.suit == hand.first_suit or hand.first_suit == 5):
                 highest = card
+        return highest
 
     def choose_weak_beat(self, playable, hand):
-        lowest = None
-        beats = self.get_beats(hand)
-        for card in playable:
-            if card.value > highest.value and (card.suit == hand.first_suit or hand.first_suit == 5):
-                highest = card
+        beats = self.get_beats(hand, playable)
+        lowest = beats[0]
+        for card in beats:
+            if card.value < lowest.value:
+                lowest = card
+        return lowest
 
-    def get_beats(self, hand):
+    def choose_strg_loss(self, playable, hand):
+        loses = self.get_loses(hand, playable)
+        highest = loses[0]
+        for card in loses:
+            if card.value < highest.value:
+                highest = card
+        return highest
+
+    def choose_weak_loss(self, playable, hand):
+        lowest = Card(0, 5)
+        for card in playable:
+            if card.value < lowest.value:
+                lowest = card
+        return lowest
+
+    def get_beats(self, hand, playable):
+        if hand.first_suit == 5:
+            return self.cards
         beats = []
         for card in self.cards:
-            if hand.first_suit == 5:
-                return self.cards
-            elif card.suit == hand.first_suit and card.value > max([x.value for x in list(filter(lambda x : x.suit == hand.firstsuit, hand.prev_cards))]):
+            if card.value == 13 or card.suit == hand.first_suit and card.value > max([x.value for x in list(filter(lambda x : x.suit == hand.firstsuit, hand.prev_cards))]):
                 beats.append(card)
         return beats
+    
+    def get_loses(self, hand, playable):
+        if hand.first_suit == 5:
+            return playable
+        loses = []
+        for card in self.cards:
+            if card.suit == hand.first_suit and card.value < max([y.value for y in list(filter(lambda x : x.suit == hand.first_suit))]):
+                loses.append(card)
+        return loses
+
+
+
     
 
 
