@@ -54,9 +54,9 @@ class Player(object):
 
         # Part of original
         # self.name      = name
-        self.hand      = list()
-        self.hand_play = list()
-        self.card_play = 0
+        # self.hand      = list()
+        # self.hand_play = list()
+        # self.card_play = 0
         
         self.state        = dict()
         self.actions      = dict()
@@ -92,7 +92,7 @@ class Player(object):
                 else:
                     self.actions[act] = 0
 
-    def play_agent(self, hand):
+    def play_agent(self, hand, prev):
         """
         Reflecting a players' intelligent move supported by the RL-algorithm, that consists of:
             - Identification of the players' state and available actions
@@ -113,16 +113,16 @@ class Player(object):
         self.action = agent.step(self.state, self.actions)
 
         # Selected action searches corresponding card
-        being_played = self.choose_card(hand)
+        being_played = self.choose_card(hand, prev)
+        
         # Selected card is played
-        self.card_play = card
-        self.hand.remove(card)
-        self.hand_play.pop()
-        deck.discard(card)
+        self.cards.remove(being_played)
+
         
         # Update Q Value           
         if algorithm == "q-learning":
             agent.update(self.state, self.action, (len(self.cards) == 0 and self.taken == self.called))
+        return being_played
 
     def play_rand(self, deck):
         """
@@ -147,16 +147,18 @@ class Player(object):
         if (self.card_play.color == "WILD") or (self.card_play.value == "PL4"):
             self.card_play.color = self.choose_color()
             
-    def choose_card(self, hand):
+    def choose_card(self, hand, prev):
         playable = self.playable(hand.first_suit)
         if self.action == 'STRG-BEAT':
-            self.choose_strg_beat(playable, hand)
+            return self.choose_strg_beat(playable, hand)
         elif self.action == 'WEAK-BEAT':
-            self.choose_weak_beat(playable, hand)
+            return self.choose_weak_beat(playable, hand, prev)
         elif self.action == 'STRG-LOSS':
-            self.choose_strg_loss(playable, hand)
+            return self.choose_strg_loss(playable, hand)
         elif self.action == 'WEAK-LOSS':
-            self.choose_weak_loss(playable, hand)
+            return self.choose_weak_loss(playable, hand)
+        else:
+            return None
 
     def playable(self, first_suit):
         firsts = list(filter(lambda x: x.suit == first_suit and not x.value == 13, self.cards))
@@ -165,6 +167,33 @@ class Player(object):
         else:
             firsts.extend(list(filter(lambda x: x.value == 13, self.cards)))
             return firsts
+        
+    def choose_strg_beat(self, playable, hand):
+        highest = None
+        for card in playable:
+            if card.value == 13:
+                return card
+            elif card.value > highest.value and (card.suit == hand.first_suit or hand.first_suit == 5):
+                highest = card
+
+    def choose_weak_beat(self, playable, hand):
+        lowest = None
+        beats = self.get_beats(hand)
+        for card in playable:
+            if card.value > highest.value and (card.suit == hand.first_suit or hand.first_suit == 5):
+                highest = card
+
+    def get_beats(self, hand):
+        beats = []
+        for card in self.cards:
+            if hand.first_suit == 5:
+                return self.cards
+            elif card.suit == hand.first_suit and card.value > max([x.value for x in list(filter(lambda x : x.suit == hand.firstsuit, hand.prev_cards))]):
+                beats.append(card)
+        return beats
+    
+
+
 
 # 5. Turn
 # -------------------------------------------------------------------------
@@ -176,43 +205,54 @@ class Turn(object):
         - Chosen action by player
         - Counter action by oposite player in case of PL2 or PL4
     """
-    
-    def __init__(self,): # need to set last_taker somewhere
+
+    def __init__(self): # need to set last_taker somewhere
         """
         Turn is initialized with standard deck, players and an open card
         """
+        self.table = []
+        self.first_s = 5
         
-        self.deck = deck
-        self.card_open = self.deck.draw_from_deck()
-        self.last_taker = None
-        self.start_up()
-    
-    def start_up(self):
-        for i in range (7):
-            self.player_1.draw(self.deck, self.card_open)
-            self.player_2.draw(self.deck, self.card_open)
             
     def action(self, hand, player):
         """
         Only reflecting the active players' action if he hand has not won yet.
         Only one player is leveraging the RL-algorithm, while the other makes random choices.
         """
-        self.count = 0
-        
 
         if player == 0:
-            hand.users[player].play_agent(hand)
+            played = (hand.users[player].play_agent(hand, self.table))
         else:
-            hand.users[player].play_rand(self.deck)
+            played = (hand.users[player].play_rand(hand))
+        self.table.append(played)
             
-        self.card_open = player_act.card_play
-        player_act.evaluate_hand(self.card_open)
+        if len(self.table) == 0:
+            self.first_s = played.suit
 
+        return played
 
-        
-        if check_win(player_act) == True: return
-        if check_win(player_pas) == True: return
-        
+    def winner(self):
+        jok = 5
+        joks = 0
+        for i in range(0,4):
+            if self.table[i].value == 13:
+                jok = i
+                joks += 1
+        if joks == 2:
+            return jok
+        else:
+            weights = []
+            for i in range(4):
+                weights.append(self.card_to_weight(self.table[i]))
+            return (np.argmax(np.asarray(weights)))
+    
+    def card_to_weight(self, card):
+        weight = 0
+        if card.value == 13:
+            return 200
+        if self.first_s == card.suit:
+            weight += 100
+        return weight + card.value     
 
 # 6. Hand
 # -------------------------------------------------------------------------
@@ -226,19 +266,24 @@ class Hand(object): # Where are we resetting self.first_suit
     def __init__(self):
         self.dealer = random.randint(0, 3)
         self.starting_player = (self.dealer + 1) % 4
-        self.turn = Turn(deck = Deck())
+        self.turn = Turn()
         self.prev_cards = []
         self.first_suit = 5
+        self.users = [Player(0), Player(1), Player(2), Player(3)]
 
         # Playing all turns for one hand
         for i in range(9): # Representing 9 turns
+            self.turn = Turn()
+            self.prev_cards = []
+            self.first_suit = 5
             for j in range(4): # Representing 4 "actions" per turn
-                self.turn.action(self, (self.starting_player + j) % 4)
-                self.prev_cards = []
-                self.starting_player = self.turn.last_taker
+                last_played = self.turn.action(self, (self.starting_player + j) % 4)
+                self.prev_cards.append(last_played)
+                if j == 0: self.first_suit = last_played.suit
+            self.starting_player = (self.starting_player + self.turn.winner()) % 4
             
         self.users[0].identify_state()
-        agent.update(self.users[0].state, self.users[0].action)
+        agent.update(self.users[0].state, self.users[0].action, (len(self.users[0].cards) == 0 and self.users[0].taken == self.users[0].called) )
                 
     def get_place_in_playing_order(self, player_id):
         '''
