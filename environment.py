@@ -92,6 +92,7 @@ class Player(object):
                 else:
                     self.actions[act] = 0
 
+# Cards removed from hand in following functions
     def play_agent(self, hand, prev):
         """
         Reflecting a players' intelligent move supported by the RL-algorithm, that consists of:
@@ -124,7 +125,7 @@ class Player(object):
             agent.update(self.state, self.action, (len(self.cards) == 0 and self.taken == self.called))
         return being_played
 
-    def play_rand(self, deck):
+    def play_rand(self):
         """
         Reflecting a players' random move, that consists of:
             - Shuffling players' hand cards
@@ -134,7 +135,7 @@ class Player(object):
         Required parameters: deck as deck
         """
         
-        random.shuffle(self.hand_play)
+        
         for card in self.hand:
             if card == self.hand_play[-1]:
                 self.card_play = card
