@@ -125,7 +125,7 @@ class Player(object):
             agent.update(self.state, self.action, (len(self.cards) == 0 and self.taken == self.called))
         return being_played
 
-    def play_rand(self):
+    def play_rand(self, first_suit):
         """
         Reflecting a players' random move, that consists of:
             - Shuffling players' hand cards
@@ -134,7 +134,8 @@ class Player(object):
         
         Required parameters: deck as deck
         """
-        
+        playable = playable(first_suit)
+        card ///STOPPEd
         
         for card in self.hand:
             if card == self.hand_play[-1]:
