@@ -2,15 +2,6 @@ import random
 import datetime
 import numpy as np
 
-def _get_highest(cards ,suit=None):
-    '''Returns a joker if there is one in cards.
-        Otherwise returns the highest valued card of the specified suit'''
-    if not suit:
-        return cards[np.argmax([card.value for card in cards])]
-    else:
-        acc = Card(0,0);[acc := Card(x,y) for x, y in map(lambda card: (card.value, card.suit), cards) if (suit == y and x > acc.value) or x == 13]
-        return acc if acc else None
-
 class Card(object):
     def __init__(self, value, suit):
         self.value = value
@@ -62,7 +53,7 @@ class Deck(list):
         return out
 
     def shuffle(self):
-        random.seed(datetime.now())
+        random.seed(datetime.datetime.now())
         random.shuffle(self)
 
     def get(self, index):
@@ -70,7 +61,7 @@ class Deck(list):
 
     def deal(self, location, times=1):
         for _ in range(times):
-            location.cards.append(self.burn())
+            location.append(self.burn())
 
     def burn(self):
         return self.pop(0)
