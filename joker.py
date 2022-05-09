@@ -147,7 +147,7 @@ def post_plays(self):
         cur = i % 4
         self.played[cur] = self._play_rand(cur)
 
-    self.hand_winner = self._winner()
+    self.hand_winner = self._winner(self.first_to_play)
     self.first_suit = None
     self.played = None
     self._set_players_cards()

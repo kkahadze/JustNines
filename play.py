@@ -17,7 +17,7 @@ class Nine(object):
 
         for i in range(1, 5):  # each player must call
             cur = (self.dealer + i) % 4
-            if not i:
+            if not cur:
                 call = self.get_player_call(i - 1)  # order is 0-indexed
             else:
                 call = self.get_bot_call(i - 1)
@@ -122,6 +122,11 @@ class Nine(object):
         else:
             firsts.extend(list(filter(lambda x: x.value == 13, all)))
             return firsts
+    
+    def load_q_table(self):
+        with open('q-table', 'r') as f:
+            q_in = f.read()
+        self.q = q_in
 
     _winner = winner
     _card_to_weight = card_to_weight
