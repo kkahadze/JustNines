@@ -3,6 +3,7 @@ import random
 
 class Nine(object):
     def __init__(self):
+        random.seed()
         self.cards = [list(), list(), list(), list()]
         self.played = np.ndarray(shape=(4), dtype=Card)
         self.dealer = random.randint(0, 3)
@@ -26,7 +27,7 @@ class Nine(object):
         first = (self.dealer + 1) % 4
         for i in range(9):  # each player must play each card
             for j in range(4):
-                if not first + j:
+                if not ((first + j) % 4):
                     self.show_player_cards()
                     card = self.get_player_card()
                 else:
@@ -67,19 +68,18 @@ class Nine(object):
 
     def get_bot_call(self, ord):
         already = self.calls.flatten().sum()
-        print("Already called", already)
         if ord == 3 and already <= 9:
             cant = 9 - already
             called = None
-            print("Player " + str((self.dealer + ord) %
+            print("Player " + str((self.dealer + ord + 1) %
                   4) + " can not call", cant)
             while called != cant:
                 called = random.randint(0, 9)
-            print("Player " + str((self.dealer + ord) %
+            print("Player " + str((self.dealer + ord + 1) %
                   4) + " called " + str(called))
         else:
             called = random.randint(0, 9)
-            print("Player " + str((self.dealer + ord) %
+            print("Player " + str((self.dealer + ord + 1) %
                   4) + " called " + str(called))
         return called
 
@@ -89,6 +89,7 @@ class Nine(object):
 
     def get_player_card(self):
         choice = self.cards[0][int(input())]
+        self.cards[0].remove(choice)
         print("You chose ", choice)
         return choice
 
@@ -124,13 +125,14 @@ class Nine(object):
             return firsts
     
     def load_q_table(self):
-        with open('q-table', 'r') as f:
-            q_in = f.read()
-        self.q = q_in
+        self.q = np.load('./models/q-table.npy')
 
     _winner = winner
     _card_to_weight = card_to_weight
 
+def main():
+    nine = Nine()
+    nine.start()
 
-game = Nine()
-game.start()
+if __name__ == "__main__":
+    main()
