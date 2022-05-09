@@ -236,4 +236,3 @@ class Player(object):
     def __repr__(self):
         id = self.id
         return id
-
