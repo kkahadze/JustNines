@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import datetime
-import numpy as np
 from more_itertools import quantify
 
 def get_obs(self):
@@ -15,10 +14,25 @@ def set_players_cards(self):
         self._deck.deal(hand, times=9)
     self._jok = quantify(map(lambda x: x.value == 13, self._table[0]))
 
-def set_calls(self):
+def set_random_calls(self): # set random calls
     self.calls = np.zeros((4))
     for i in range(4):
+        self.calls[i] = random.randint(0,9)
+    
+
+def set_calls(self):
+    self.calls = np.zeros((4))
+    already = 0
+    for i in range(4):
         cur_player = (self.first_to_play + i) % 4
+
+        if not cur_player: # for call recording
+            joks = quantify([card.value == 13 for card in self._table[0]])
+            aces = quantify([card.value == 12 for card in self._table[0]])
+            kings = quantify([card.value == 11 for card in self._table[0]])
+            queens = quantify([card.value == 10 for card in self._table[0]])
+            call_state = (self._ord, already, joks, aces, kings, queens )
+
         want = quantify(map(lambda x: x.value > 11, self._table[cur_player])) 
         if want > 0:
             want-=1
@@ -29,7 +43,10 @@ def set_calls(self):
                 self.calls[cur_player] = want
             else:
                 self.calls[cur_player] = 0
+        already += self.calls[cur_player]
     self._tmc = -1 * self.calls[0]
+    return call_state
+
 
 def playable(self, player):
     all = self._table[player]

@@ -4,7 +4,7 @@ import numpy as np
 from joker import *
 import random
 
-class NineEnv(gym.Env):
+class CardChoiceEnv(gym.Env):
     metadata = {"render_modes": ["human"], "render_fps": 2}
 
     def __init__(self):
@@ -28,7 +28,9 @@ class NineEnv(gym.Env):
         self._tot = 9
 
         self._set_players_cards() # this has to set self._jok
-        self._set_calls() # this has to set self._tmc
+
+        self.call_state = self._set_calls() # this has to set self._tmc, also for call recoridng
+        self.player_call = -1 * self._tmc # for call recording
 
         self.first_suit = None
 
@@ -42,7 +44,7 @@ class NineEnv(gym.Env):
 
     def step(self, action): 
         # Map the action (element of {0,1,2,3}) to the card we play
-        self._act(action)
+        self.act(action)
         self._post_plays()
         self._set_players_cards() 
         self._set_calls()
@@ -63,7 +65,7 @@ class NineEnv(gym.Env):
         # No info
         return observation, reward, done, None
 
-    def _act(self, action):
+    def act(self, action):
         playable = self._playable(0)
         if action == 'STRG-BEAT':
             card = self._choose_strg_beat(playable)
@@ -113,3 +115,4 @@ class NineEnv(gym.Env):
     _get_winning_card = get_winning_card
     _card_to_weight = card_to_weight
     _get_loses = get_loses
+    _set_random_calls = set_random_calls
