@@ -17,7 +17,7 @@ class CardChoiceEnv(gym.Env):
         ))
         self.action_space = spaces.Discrete(4)
 
-    def reset(self, seed=None):
+    def reset(self):
         # We need the following line to seed self.np_random
         # super().reset()
 

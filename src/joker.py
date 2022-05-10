@@ -33,17 +33,14 @@ def set_calls(self):
             queens = quantify([card.value == 10 for card in self._table[0]])
             call_state = (self._ord, already, joks, aces, kings, queens )
 
-        want = quantify(map(lambda x: x.value > 11, self._table[cur_player])) 
-        if want > 0:
-            want-=1
+        guess = quantify([x.value > 11 for x in self._table[cur_player]]) - 1
+        want = guess if guess >= 0 else 0
+        already += want
+        
         if i < 3 or want == 9 - self.calls.sum():
             self.calls[cur_player] = want
         else:
-            if want > 0:
-                self.calls[cur_player] = want
-            else:
-                self.calls[cur_player] = 0
-        already += self.calls[cur_player]
+            self.calls[cur_player] = want
     self._tmc = -1 * self.calls[0]
     return call_state
 
