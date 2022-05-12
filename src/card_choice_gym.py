@@ -3,6 +3,8 @@ from gym import spaces
 import numpy as np
 from joker import *
 import random
+import os
+from keras.models import Sequential, load_model
 
 class CardChoiceEnv(gym.Env):
     metadata = {"render_modes": ["human"], "render_fps": 2}
@@ -17,10 +19,12 @@ class CardChoiceEnv(gym.Env):
         ))
         self.action_space = spaces.Discrete(4)
 
+        self.calling_model = None
+
     def reset(self):
         # We need the following line to seed self.np_random
         # super().reset()
-
+            
         self.played = np.ndarray((4), dtype=Card)
         self.first_to_play = random.randint(0, 3)
 
@@ -116,3 +120,4 @@ class CardChoiceEnv(gym.Env):
     _card_to_weight = card_to_weight
     _get_loses = get_loses
     _set_random_calls = set_random_calls
+

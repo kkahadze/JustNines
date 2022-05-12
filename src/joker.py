@@ -1,7 +1,9 @@
+from functools import cache
 import numpy as np
 import random
 import datetime
 from more_itertools import quantify
+from regex import cache_all
 
 def get_obs(self):
     return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
@@ -34,10 +36,18 @@ def set_calls(self):
 
         # quantify([x.value > 10 for x in self._table[cur_player]])    if random.randint(0,3) > 3 else
         # random.randint(0, 9) # DATA COLLECTION PURPOSES
-        guess = quantify([x.value > 10 for x in self._table[cur_player]])
-        # print(guess)
+
+        if self.calling_model != None and not cur_player:
+            params = (self._ord, already, joks, aces, kings, queens)
+            guess = np.argmax(model_predict(self.calling_model, params))
+            # print(f"Guess {guess}")
+            
+        else:
+            guess = quantify([x.value > 10 for x in self._table[cur_player]])
+
         want = guess if guess >= 0 else 0
         already += want
+        # print(guess)
         if not cur_player:
             call_state = (want, self._ord, already, joks, aces, kings, queens)
         
@@ -179,6 +189,11 @@ def get_highest(cards ,suit=None):
         acc = None;[acc := Card(x,y) for (x, y) in map(lambda card: (card.value, card.suit), cards) if (not acc) or (suit == y and x > acc.value) or x == 13]
         return acc if acc else None
     
+@cache
+def model_predict(model, args_in):
+    arg1, arg2, arg3, arg3, arg5, arg6 = args_in
+    return model.predict([[arg1, arg2, arg3, arg3, arg5, arg6]])
+
 class Card(object):
     def __init__(self, value, suit):
         self.value = value
@@ -211,6 +226,7 @@ class Card(object):
             return "Joker"
         else:
             return value_name + " of " + suit_name
+
 
 class Deck(list):
     def __init__(self):
@@ -253,3 +269,4 @@ class Player(object):
     def __repr__(self):
         id = self.id
         return id
+
