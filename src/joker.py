@@ -33,7 +33,8 @@ def set_calls(self):
             queens = quantify([card.value == 10 for card in self._table[0]])
 
         # quantify([x.value > 10 for x in self._table[cur_player]])    if random.randint(0,3) > 3 else
-        guess = 9 # random.randint(7, 9) # DATA COLLECTION PURPOSES
+        # random.randint(0, 9) # DATA COLLECTION PURPOSES
+        guess = quantify([x.value > 10 for x in self._table[cur_player]])
         # print(guess)
         want = guess if guess >= 0 else 0
         already += want
