@@ -13,7 +13,7 @@ class CardChoiceEnv(gym.Env):
             spaces.Discrete(9),
             spaces.Discrete(3),
             spaces.Discrete(4),
-            spaces.Discrete(18),
+            spaces.Discrete(19),
         ))
         self.action_space = spaces.Discrete(4)
 
@@ -29,7 +29,8 @@ class CardChoiceEnv(gym.Env):
 
         self._set_players_cards() # this has to set self._jok
 
-        self.call_state = self._set_calls() # this has to set self._tmc, also for call recoridng
+        # this has to set self._tmc, also for call recoridng
+        self.call_state= self._set_calls()
         self.player_call = -1 * self._tmc # for call recording
 
         self.first_suit = None
@@ -47,10 +48,9 @@ class CardChoiceEnv(gym.Env):
         self.act(action)
         self._post_plays()
         self._set_players_cards() 
-        self._set_calls()
         self._tot -= 1
 
-        if not self.hand_winner:
+        if self.hand_winner == 0:
             self._tmc += 1
         
         self.first_to_play = self.hand_winner

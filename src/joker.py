@@ -4,7 +4,7 @@ import datetime
 from more_itertools import quantify
 
 def get_obs(self):
-    return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 8))
+    return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
 
 def set_players_cards(self):
     self._table = [list(), list(), list(), list()]
@@ -31,11 +31,14 @@ def set_calls(self):
             aces = quantify([card.value == 12 for card in self._table[0]])
             kings = quantify([card.value == 11 for card in self._table[0]])
             queens = quantify([card.value == 10 for card in self._table[0]])
-            call_state = (self._ord, already, joks, aces, kings, queens )
 
-        guess = quantify([x.value > 11 for x in self._table[cur_player]]) - 1
+        # quantify([x.value > 10 for x in self._table[cur_player]])    if random.randint(0,3) > 3 else
+        guess = 9 # random.randint(7, 9) # DATA COLLECTION PURPOSES
+        # print(guess)
         want = guess if guess >= 0 else 0
         already += want
+        if not cur_player:
+            call_state = (want, self._ord, already, joks, aces, kings, queens)
         
         if i < 3 or want == 9 - self.calls.sum():
             self.calls[cur_player] = want
@@ -165,7 +168,6 @@ def post_plays(self):
     self.first_suit = None
     self.played = None
     self._set_players_cards()
-    self._set_calls() 
 
 def get_highest(cards ,suit=None):
     '''Returns a joker if there is one in cards.
