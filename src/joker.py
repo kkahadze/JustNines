@@ -1,13 +1,13 @@
-from functools import cache
+from functools import cache, lru_cache
 import numpy as np
 import random
 import datetime
 from more_itertools import quantify
-from regex import cache_all
+from utils import Memorize
 
 def get_obs(self):
-    print((self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9)))
-    return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
+    # print((self._ord, self._tot , self._jok, self._btl, int(self._tmc + 9)))
+    return (self._ord, self._tot , self._jok, self._btl, int(self._tmc + 9))
 
 def set_players_cards(self):
     self._table = [list(), list(), list(), list()]
@@ -69,31 +69,31 @@ def playable(self, player):
         firsts.extend(list(filter(lambda x: x.value == 13, all)))
         return firsts
 
-def choose_strg_beat(self, playable): 
-    highest = get_highest(playable, self.first_suit) 
-    return highest if highest else get_highest(playable) 
+# def choose_strg_beat(self, playable): 
+#     highest = get_highest(playable, self.first_suit) 
+#     return highest if highest else get_highest(playable) 
 
-def choose_weak_beat(self, playable): 
-    beats = self._get_beats(playable) 
-    if not beats:
-        return self._choose_weak_loss(playable)
-    lowest = Card(13, 0)
-    for card in beats:
-        if card.value < lowest.value:
-            lowest = card
-    return lowest
+# def choose_weak_beat(self, playable): 
+#     beats = self._get_beats(playable) 
+#     if not beats:
+#         return self._choose_weak_loss(playable)
+#     lowest = Card(13, 0)
+#     for card in beats:
+#         if card.value < lowest.value:
+#             lowest = card
+#     return lowest
 
-def choose_strg_loss(self, playable): 
-    loses = self._get_loses(playable)
-    if not loses:
-        return self._choose_strg_beat(playable)
-    else:
-        highest = get_highest(playable, suit=self.first_suit)
-        return highest if highest else get_highest(playable)
+# def choose_strg_loss(self, playable): 
+#     loses = self._get_loses(playable)
+#     if not loses:
+#         return self._choose_strg_beat(playable)
+#     else:
+#         highest = get_highest(playable, suit=self.first_suit)
+#         return highest if highest else get_highest(playable)
 
-def choose_weak_loss(self, playable):
-    acc = Card(13, 0); [acc := Card(card.value, card.suit) for card in playable if card.value < acc.value]
-    return acc
+# def choose_weak_loss(self, playable):
+#     acc = Card(13, 0); [acc := Card(card.value, card.suit) for card in playable if card.value < acc.value]
+#     return acc
 
 def get_winning_card(self):
     if not self.played.any():
@@ -189,11 +189,17 @@ def get_highest(cards ,suit=None):
     else:
         acc = None;[acc := Card(x,y) for (x, y) in map(lambda card: (card.value, card.suit), cards) if (not acc) or (suit == y and x > acc.value) or x == 13]
         return acc if acc else None
-    
+
+def in_playable(self, player, action):
+    playable = self._playable(player)
+    for card in playable:
+        if card.value == action // 4 + 4 and card.suit == action % 4:
+            return True
+    return False
+
 @cache
 def model_predict(model, args_in):
-    arg1, arg2, arg3, arg3, arg5, arg6 = args_in
-    return model.predict([[arg1, arg2, arg3, arg3, arg5, arg6]])
+    return model(np.asarray([list(args_in)]), training=False)
 
 class Card(object):
     def __init__(self, value, suit):

@@ -17,7 +17,7 @@ class CardChoiceEnv(gym.Env):
             spaces.Discrete(4),
             spaces.Discrete(19),
         ))
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(36)
 
         self.calling_model = None
 
@@ -70,47 +70,30 @@ class CardChoiceEnv(gym.Env):
         return observation, reward, done, None
 
     def act(self, action):
-        playable = self._playable(0)
-        if action == 'STRG-BEAT':
-            card = self._choose_strg_beat(playable)
-        elif action == 'WEAK-BEAT':
-            card = self._choose_weak_beat(playable)
-        elif action == 'STRG-LOSS':
-            card = self._choose_strg_loss(playable)
-        elif action == 'WEAK-LOSS':
-            card = self._choose_weak_loss(playable)
-        else:
-            return None
-
+        suit = action % 4
+        value = action // 4 + 4
         if self._ord == 0:
-            self.first_suit = card.value
+            self.first_suit = suit
             self.played = np.ndarray((4), dtype=Card)
-            self.played[0] = card
+            self.played[0] = Card(value, suit)
         elif self._ord == 3: 
             self.first_suit = None
-            self.played[0] = card
+            self.played[0] = Card(value, suit)
             self.hand_winner = self._winner(self.first_to_play)
         else:
-            self.played[0] = card
+            self.played[0] = Card(value, suit)
 
-        if card and card.value == 13:
-            for card in self._table[0]:
-                if card.value == 13:
-                    self._table[0].remove(card)
-                    break
-        else:
-            self._remove_from_table(0, card.suit, card.value)
-        return card
+        self._remove_from_table(0, suit, value)
     
     # Joker game related functions
     _get_obs = get_obs
     _set_players_cards = set_players_cards
     _set_calls = set_calls
     _playable  = playable
-    _choose_strg_beat = choose_strg_beat
-    _choose_strg_loss = choose_strg_loss
-    _choose_weak_beat = choose_weak_beat
-    _choose_weak_loss = choose_weak_loss
+    # _choose_strg_beat = choose_strg_beat
+    # _choose_strg_loss = choose_strg_loss
+    # _choose_weak_beat = choose_weak_beat
+    # _choose_weak_loss = choose_weak_loss
     _play_rand = play_rand
     _winner = winner
     _pre_plays, _post_plays = pre_plays, post_plays
@@ -120,4 +103,4 @@ class CardChoiceEnv(gym.Env):
     _card_to_weight = card_to_weight
     _get_loses = get_loses
     _set_random_calls = set_random_calls
-
+    in_playable = in_playable
