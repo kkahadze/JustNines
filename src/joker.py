@@ -6,6 +6,7 @@ from more_itertools import quantify
 from regex import cache_all
 
 def get_obs(self):
+    print((self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9)))
     return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
 
 def set_players_cards(self):
