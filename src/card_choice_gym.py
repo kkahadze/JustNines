@@ -3,7 +3,6 @@ from gym import spaces
 import numpy as np
 from joker import *
 import random
-import os
 from keras.models import Sequential, load_model
 
 class CardChoiceEnv(gym.Env):
