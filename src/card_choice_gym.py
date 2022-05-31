@@ -3,7 +3,7 @@ from gym import spaces
 import numpy as np
 from joker import *
 import random
-import os
+import datetime
 from keras.models import Sequential, load_model
 
 class CardChoiceEnv(gym.Env):
@@ -20,6 +20,7 @@ class CardChoiceEnv(gym.Env):
         self.action_space = spaces.Discrete(36)
 
         self.calling_model = None
+        random.seed(datetime.datetime.now().timestamp())
 
     def reset(self):
         # We need the following line to seed self.np_random
@@ -89,7 +90,7 @@ class CardChoiceEnv(gym.Env):
     _get_obs = get_obs
     _set_players_cards = set_players_cards
     _set_calls = set_calls
-    _playable  = playable
+    # _playable  = playable
     # _choose_strg_beat = choose_strg_beat
     # _choose_strg_loss = choose_strg_loss
     # _choose_weak_beat = choose_weak_beat
@@ -103,4 +104,6 @@ class CardChoiceEnv(gym.Env):
     _card_to_weight = card_to_weight
     _get_loses = get_loses
     _set_random_calls = set_random_calls
+    deal = deal
     in_playable = in_playable
+    _playable = playable

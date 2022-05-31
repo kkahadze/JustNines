@@ -1,27 +1,30 @@
-from functools import cache, lru_cache
+from functools import cache
 import numpy as np
 import random
-import datetime
 from more_itertools import quantify
-from utils import Memorize
 
+
+def deal(self):
+    self._table = [None, None, None, None]
+    all = np.asarray([Card(value, suit) for value in range(4, 14) for suit in range(4) 
+        if suit % 2 != 0 or (value != 4 and value != 13)], dtype=Card)
+    np.random.shuffle(all)
+    all = np.reshape(all, newshape=(4, 9))
+    for i in range(4):
+        self._table[i] = set(all[i])
+    
 def get_obs(self):
     # print((self._ord, self._tot , self._jok, self._btl, int(self._tmc + 9)))
     return (self._ord, self._tot , self._jok, self._btl, int(self._tmc + 9))
 
-def set_players_cards(self):
-    self._table = [list(), list(), list(), list()]
-    self._deck = Deck()
-    self._deck.shuffle()
-    for hand in self._table:
-        self._deck.deal(hand, times=9)
+def set_players_cards(self): # SLOW
+    self.deal()
     self._jok = quantify(map(lambda x: x.value == 13, self._table[0]))
 
 def set_random_calls(self): # set random calls
     self.calls = np.zeros((4))
     for i in range(4):
         self.calls[i] = random.randint(0,9)
-    
 
 def set_calls(self):
     self.calls = np.zeros((4))
@@ -38,7 +41,8 @@ def set_calls(self):
         # quantify([x.value > 10 for x in self._table[cur_player]])    if random.randint(0,3) > 3 else
         # random.randint(0, 9) # DATA COLLECTION PURPOSES
 
-        if self.calling_model != None and not cur_player:
+        if not cur_player: # and self.calling_model != None :
+            # print("CORRECT CALLING")
             params = (self._ord, already, joks, aces, kings, queens)
             guess = np.argmax(model_predict(self.calling_model, params))
             # print(f"Guess {guess}")
@@ -60,40 +64,15 @@ def set_calls(self):
     return call_state
 
 
-def playable(self, player):
-    all = self._table[player]
-    firsts = list(filter(lambda x: x.suit == self.first_suit, all))
-    if not firsts:
-        return all
-    else:
-        firsts.extend(list(filter(lambda x: x.value == 13, all)))
-        return firsts
-
-# def choose_strg_beat(self, playable): 
-#     highest = get_highest(playable, self.first_suit) 
-#     return highest if highest else get_highest(playable) 
-
-# def choose_weak_beat(self, playable): 
-#     beats = self._get_beats(playable) 
-#     if not beats:
-#         return self._choose_weak_loss(playable)
-#     lowest = Card(13, 0)
-#     for card in beats:
-#         if card.value < lowest.value:
-#             lowest = card
-#     return lowest
-
-# def choose_strg_loss(self, playable): 
-#     loses = self._get_loses(playable)
-#     if not loses:
-#         return self._choose_strg_beat(playable)
+# def playable(self, player):
+#     all = self._table[player]
+#     firsts = filter(lambda x: x.suit == self.first_suit, all)
+#     if not firsts:
+#         return all
 #     else:
-#         highest = get_highest(playable, suit=self.first_suit)
-#         return highest if highest else get_highest(playable)
-
-# def choose_weak_loss(self, playable):
-#     acc = Card(13, 0); [acc := Card(card.value, card.suit) for card in playable if card.value < acc.value]
-#     return acc
+#         firsts = list(firsts)
+#         firsts.extend(filter(lambda x: x.value == 13, all))
+#         return firsts
 
 def get_winning_card(self):
     if not self.played.any():
@@ -110,19 +89,21 @@ def get_beats(self, playable):
         return playable
     else:
         if cur_winner.value == 13:
-            return list(filter(lambda x: x.value == 13, playable))
+            filtered = filter(lambda x: x.value == 13, playable)
+            return
         else:
-            return list(filter(lambda x: x and x.value > cur_winner.value, playable))
+            return filter(lambda x: x and x.value > cur_winner.value, playable)
 
 def get_loses(self, playable):
     if self.first_suit == None:
         return playable
     loses = []
     for card in playable:
-        if card.suit == self.first_suit and card.value < max([y.value for y in list(filter(lambda x : x and x.suit == self.first_suit, playable))]):
+        if card.suit == self.first_suit and card.value < max([y.value for y in filter(lambda x : x and x.suit == self.first_suit, playable)]):
             loses.append(card)
     return loses
 
+@cache
 def card_to_weight(self, card):
     weight = 0
     if card.value == 13:
@@ -156,7 +137,7 @@ def remove_from_table(self, player, suit, value):
 
 def play_rand(self, player):
     poss = self._playable(player)
-    choice = poss[random.randint(0, len(poss) - 1)]
+    choice = random.choice(list(poss))
     self._remove_from_table(player,choice.value, choice.suit)
     self.played[player] = choice
     return choice
@@ -181,14 +162,21 @@ def post_plays(self):
     self.played = None
     self._set_players_cards()
 
-def get_highest(cards ,suit=None):
-    '''Returns a joker if there is one in cards.
-        Otherwise returns the highest valued card of the specified suit'''
-    if not suit:
-        return cards[np.argmax([card.value for card in cards])]
+# def get_highest(cards ,suit=None):
+#     '''Returns a joker if there is one in cards.
+#         Otherwise returns the highest valued card of the specified suit'''
+#     if not suit:
+#         return cards[np.argmax([card.value for card in cards])]
+#     else:
+#         acc = None;[acc := Card(x,y) for (x, y) in map(lambda card: (card.value, card.suit), cards) if (not acc) or (suit == y and x > acc.value) or x == 13]
+#         return acc if acc else None
+
+def playable(self, player):
+    all = self._table[player]
+    if any(card.suit == self.first_suit for card in all):
+        return filter(lambda card: card.suit == self.first_suit, all)
     else:
-        acc = None;[acc := Card(x,y) for (x, y) in map(lambda card: (card.value, card.suit), cards) if (not acc) or (suit == y and x > acc.value) or x == 13]
-        return acc if acc else None
+        return all
 
 def in_playable(self, player, action):
     playable = self._playable(player)
@@ -234,14 +222,18 @@ class Card(object):
         else:
             return value_name + " of " + suit_name
 
+    def __hash__(self) -> int:
+        return self.suit * 9 + self.value
+
+    def __eq__(self, obj):
+        return isinstance(obj, Card) and obj.value == self.value and obj.suit == self.suit
+
+
 
 class Deck(list):
     def __init__(self):
-        super().__init__()
-        suits = list(range(4))
-        values = list(range(5, 13))
+        super().__init__([(Card(i, j)) for j in range(0,4) for i in range(5, 13)])
         # Ranks 7 through A are added
-        [[self.append(Card(i, j)) for j in suits] for i in values]
         # Ranks Six and Ace are added
         self.extend([Card(13, 0), Card(13, 0), Card(4, 0), Card(4, 2)]) 
 
@@ -252,7 +244,7 @@ class Deck(list):
         return out
 
     def shuffle(self):
-        random.seed(datetime.datetime.now().timestamp())
+        # random.seed(datetime.datetime.now().timestamp())
         random.shuffle(self)
 
     def get(self, index):
@@ -260,10 +252,7 @@ class Deck(list):
 
     def deal(self, location, times=1):
         for _ in range(times):
-            location.append(self.burn())
-
-    def burn(self):
-        return self.pop(0)
+            location.append(self.pop(0))
 
 class Player(object):
     def __init__(self, id_in):
