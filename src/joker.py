@@ -189,13 +189,16 @@ def get_highest(cards ,suit=None):
     if not suit:
         return cards[np.argmax([card.value for card in cards])]
     else:
-        acc = None;[acc := Card(x,y) for (x, y) in map(lambda card: (card.value, card.suit), cards) if (not acc) or (suit == y and x > acc.value) or x == 13]
+        acc = None
+        for card in cards:
+            if (acc and card.suit == suit and card.value > acc.value) or (card.suit == suit and not card):  
+                acc = card
         return acc if acc else None
     
 # @cache
 def model_predict(model, args_in):
     arg1, arg2, arg3, arg3, arg5, arg6 = args_in
-    return model.predict([[arg1, arg2, arg3, arg3, arg5, arg6]])
+    return model.predict(np.expand_dims([arg1, arg2, arg3, arg3, arg5, arg6],axis=0))
 
 class Card(object):
     def __init__(self, value, suit):
