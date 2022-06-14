@@ -1,9 +1,9 @@
-from functools import cache
+# from functools import cache
 import numpy as np
 import random
 import datetime
 from more_itertools import quantify
-from regex import cache_all
+# from regex import cache_all
 
 def get_obs(self):
     return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
@@ -91,7 +91,10 @@ def choose_strg_loss(self, playable):
         return highest if highest else get_highest(playable)
 
 def choose_weak_loss(self, playable):
-    acc = Card(13, 0); [acc := Card(card.value, card.suit) for card in playable if card.value < acc.value]
+    acc = Card(13, 0)
+    for card in playable:
+        if acc.value > card.value:
+            acc = card
     return acc
 
 def get_winning_card(self):
@@ -189,7 +192,7 @@ def get_highest(cards ,suit=None):
         acc = None;[acc := Card(x,y) for (x, y) in map(lambda card: (card.value, card.suit), cards) if (not acc) or (suit == y and x > acc.value) or x == 13]
         return acc if acc else None
     
-@cache
+# @cache
 def model_predict(model, args_in):
     arg1, arg2, arg3, arg3, arg5, arg6 = args_in
     return model.predict([[arg1, arg2, arg3, arg3, arg5, arg6]])
