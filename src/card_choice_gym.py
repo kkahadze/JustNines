@@ -10,13 +10,22 @@ class CardChoiceEnv(gym.Env):
 
     def __init__(self):
         self.observation_space = spaces.Tuple((
-            spaces.Discrete(4),
+            spaces.MultiBinary(9), # Played
+            spaces.MultiBinary(9),
+            spaces.MultiBinary(9),
+            spaces.MultiBinary(9),
+            spaces.Discrete(9), # taken
             spaces.Discrete(9),
-            spaces.Discrete(3),
-            spaces.Discrete(4),
-            spaces.Discrete(19),
+            spaces.Discrete(9),
+            spaces.Discrete(9),
+            spaces.Discrete(9), # called
+            spaces.Discrete(9),
+            spaces.Discrete(9),
+            spaces.Discrete(9),
+            spaces.Discrete(4), # first suit
+            spaces.MultiBinary(36), # table
         ))
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(45)
 
         self.calling_model = None
 
