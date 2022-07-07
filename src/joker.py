@@ -200,6 +200,9 @@ def model_predict(model, args_in):
     arg1, arg2, arg3, arg3, arg5, arg6 = args_in
     return model.predict(np.expand_dims([arg1, arg2, arg3, arg3, arg5, arg6],axis=0))
 
+def play_card(self): # new
+    return
+
 class Card(object):
     def __init__(self, value, suit):
         self.value = value

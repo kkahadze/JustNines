@@ -4,6 +4,7 @@ import numpy as np
 from joker import *
 import random
 from keras.models import Sequential, load_model
+from collections import defaultdict
 
 class CardChoiceEnv(gym.Env):
     metadata = {"render_modes": ["human"], "render_fps": 2}
@@ -79,16 +80,8 @@ class CardChoiceEnv(gym.Env):
 
     def act(self, action):
         playable = self._playable(0)
-        if action == 'STRG-BEAT':
-            card = self._choose_strg_beat(playable)
-        elif action == 'WEAK-BEAT':
-            card = self._choose_weak_beat(playable)
-        elif action == 'STRG-LOSS':
-            card = self._choose_strg_loss(playable)
-        elif action == 'WEAK-LOSS':
-            card = self._choose_weak_loss(playable)
-        else:
-            return None
+
+        card = self._play_card(playable, action)
 
         if self._ord == 0:
             self.first_suit = card.value
@@ -101,13 +94,13 @@ class CardChoiceEnv(gym.Env):
         else:
             self.played[0] = card
 
-        if card and card.value == 13:
-            for card in self._table[0]:
-                if card.value == 13:
-                    self._table[0].remove(card)
-                    break
-        else:
-            self._remove_from_table(0, card.suit, card.value)
+        # if card and card.value == 13: # This seems unneccessary, testing needs to be done, commenting out for now
+        #     for card in self._table[0]:
+        #         if card.value == 13:
+        #             self._table[0].remove(card)
+        #             break
+        # else:
+        #     self._remove_from_table(0, card.suit, card.value)
         return card
     
     # Joker game related functions
@@ -128,4 +121,4 @@ class CardChoiceEnv(gym.Env):
     _card_to_weight = card_to_weight
     _get_loses = get_loses
     _set_random_calls = set_random_calls
-
+    _play_card = play_card
