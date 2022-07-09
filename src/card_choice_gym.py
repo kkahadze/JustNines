@@ -24,7 +24,7 @@ class CardChoiceEnv(gym.Env):
             spaces.Discrete(9),
             spaces.Discrete(9),
             spaces.Discrete(9),
-            spaces.Discrete(4), # first suit
+            spaces.Discrete(5), # first suit
             spaces.MultiBinary(36), # table
         ))
         self.action_space = spaces.Discrete(44)
@@ -38,6 +38,8 @@ class CardChoiceEnv(gym.Env):
         self.played = np.ndarray((4), dtype=Card)
         self.first_to_play = random.randint(0, 3)
         self.gone = np.zeros(36, dtype=np.bool)
+        self.calls = np.zeros(4, dtype=int)
+        self.taken = np.zeros(4, dtype=int)
         
 
         # self._ord = (4 - self.first_to_play) % 4

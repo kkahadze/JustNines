@@ -5,6 +5,16 @@ import datetime
 from more_itertools import quantify
 # from regex import cache_all
 
+def table_to_binary(self):
+    bin = np.zeros(36, dtype=int)
+    for hand in self._table:
+        for card in hand:
+            if card.value == 13 and bin[34]:
+                bin[35] = 1
+            else:
+                bin[self.card_to_index(card)] = 1
+    return bin
+
 def action_to_index(action):
     if action >= 35:
         return 35
@@ -26,12 +36,14 @@ def update_gone(self, card):
     else:
         self.gone[ind] = True
 
-
 def get_obs(self):
-    '''
-    Gets the observation
-    '''
-    return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
+    return (
+        self.gone[:9], self.gone[9:18], self.gone[18:27], self.gone[27:],
+        self.taken[0], self.taken[1], self.taken[2], self.taken[3], 
+        self.calls[0], self.calls[1], self.calls[2], self.calls[3], 
+        self.first_suit if self.first_suit else 4,
+        self.table_to_binary()
+        )
 
 def set_players_cards(self):
     self._table = [list(), list(), list(), list()]
@@ -47,7 +59,6 @@ def set_random_calls(self): # set random calls
         self.calls[i] = random.randint(0,9)
 
 def set_calls(self):
-    self.calls = np.zeros((4))
     already = 0
     for i in range(4):
         cur_player = (self.first_to_play + i) % 4
@@ -203,6 +214,7 @@ def post_plays(self):
         self.played[cur] = self._play_rand(cur)
 
     self.hand_winner = self._winner(self.first_to_play)
+    self.taken[self.hand_winner] += 1
     self.first_suit = None
     self.played = None
     self._set_players_cards()
@@ -295,11 +307,7 @@ class Player(object):
     def __init__(self, id_in):
         self.id = id_in
         self.score = 0
-        self.cards = []
-        self.called = 0
-        self.taken = 0
 
     def __repr__(self):
         id = self.id
         return id
-
