@@ -1,3 +1,4 @@
+from turtle import update
 import gym
 from gym import spaces
 import numpy as np
@@ -11,7 +12,7 @@ class CardChoiceEnv(gym.Env):
 
     def __init__(self):
         self.observation_space = spaces.Tuple((
-            spaces.MultiBinary(9), # Played
+            spaces.MultiBinary(9), # gone
             spaces.MultiBinary(9),
             spaces.MultiBinary(9),
             spaces.MultiBinary(9),
@@ -26,7 +27,7 @@ class CardChoiceEnv(gym.Env):
             spaces.Discrete(4), # first suit
             spaces.MultiBinary(36), # table
         ))
-        self.action_space = spaces.Discrete(45)
+        self.action_space = spaces.Discrete(44)
 
         self.calling_model = None
 
@@ -36,9 +37,11 @@ class CardChoiceEnv(gym.Env):
             
         self.played = np.ndarray((4), dtype=Card)
         self.first_to_play = random.randint(0, 3)
+        self.gone = np.zeros(36, dtype=np.bool)
+        
 
-        self._ord = (4 - self.first_to_play) % 4
-        self._tot = 9
+        # self._ord = (4 - self.first_to_play) % 4
+        # self._tot = 9
 
         self._set_players_cards() # this has to set self._jok
 
@@ -59,21 +62,27 @@ class CardChoiceEnv(gym.Env):
     def step(self, action): 
         # Map the action (element of {0,1,2,3}) to the card we play
         self.act(action)
+        self._update_gone()
         self._post_plays()
         self._set_players_cards() 
-        self._tot -= 1
+        # self._tot -= 1
 
-        if self.hand_winner == 0:
-            self._tmc += 1
+        # if self.hand_winner == 0:
+        #     self._tmc += 1
         
         self.first_to_play = self.hand_winner
-        self._ord = (4 - self.first_to_play) % 4
+        # self._ord = (4 - self.first_to_play) % 4
 
         self.played = None
         self._pre_plays()
-        done = self._tot == 0
-        reward = 1 if self._tmc == 0 and done else 0   # No negative rewards
-        observation = self._get_obs()
+
+        left = 0
+        for i in range(4):
+            left += sum(self.observation_space[i])
+
+        done = not bool(left)
+        reward = 1 if self.observation_space[4] == self.observation_space[8] and done else 0   # No negative rewards
+        observation = self._get_obs() # need update
         
         # No info
         return observation, reward, done, None
@@ -93,6 +102,8 @@ class CardChoiceEnv(gym.Env):
             self.hand_winner = self._winner(self.first_to_play)
         else:
             self.played[0] = card
+        
+        self._update_gone(card)
 
         # if card and card.value == 13: # This seems unneccessary, testing needs to be done, commenting out for now
         #     for card in self._table[0]:
@@ -122,3 +133,4 @@ class CardChoiceEnv(gym.Env):
     _get_loses = get_loses
     _set_random_calls = set_random_calls
     _play_card = play_card
+    _update_gone = update_gone

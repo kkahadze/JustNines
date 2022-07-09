@@ -3,3 +3,4 @@ __pycache__/
 /data/calls.csv
 notes.txt
 .vscode/
+tests.py

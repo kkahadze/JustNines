@@ -5,7 +5,32 @@ import datetime
 from more_itertools import quantify
 # from regex import cache_all
 
+def action_to_index(action):
+    if action >= 35:
+        return 35
+    else:
+        return action
+
+def card_to_index(card): # never returns 35
+    if card.value == 4:
+        return card.suit / 2
+    elif card.value == 13:
+        return 34
+    else:
+        return (card.value - 5) * 4 + card.suit + 2
+
+def update_gone(self, card):
+    ind = card_to_index(card)
+    if ind == 34 and self.gone[34]:
+        self.gone[35] = True
+    else:
+        self.gone[ind] = True
+
+
 def get_obs(self):
+    '''
+    Gets the observation
+    '''
     return (self._ord, self._tot - 1, self._jok, self._btl, int(self._tmc + 9))
 
 def set_players_cards(self):
@@ -20,7 +45,6 @@ def set_random_calls(self): # set random calls
     self.calls = np.zeros((4))
     for i in range(4):
         self.calls[i] = random.randint(0,9)
-    
 
 def set_calls(self):
     self.calls = np.zeros((4))
@@ -57,7 +81,6 @@ def set_calls(self):
             self.calls[cur_player] = want
     self._tmc = -1 * self.calls[0]
     return call_state
-
 
 def playable(self, player):
     all = self._table[player]
@@ -159,6 +182,7 @@ def remove_from_table(self, player, suit, value):
 def play_rand(self, player):
     poss = self._playable(player)
     choice = poss[random.randint(0, len(poss) - 1)]
+    self.update_gone(choice)
     self._remove_from_table(player,choice.value, choice.suit)
     self.played[player] = choice
     return choice
@@ -236,7 +260,6 @@ class Card(object):
         else:
             return value_name + " of " + suit_name
 
-
 class Deck(list):
     def __init__(self):
         super().__init__()
@@ -246,6 +269,7 @@ class Deck(list):
         [[self.append(Card(i, j)) for j in suits] for i in values]
         # Ranks Six and Ace are added
         self.extend([Card(13, 0), Card(13, 0), Card(4, 0), Card(4, 2)]) 
+
 
     def __repr__(self):
         out = ""
