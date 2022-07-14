@@ -25,7 +25,11 @@ class CardChoiceEnv(gym.Env):
             spaces.Discrete(9),
             spaces.Discrete(9),
             spaces.Discrete(5), # first suit
-            spaces.MultiBinary(36), # table
+            spaces.Discrete(36), # on table
+            spaces.Discrete(36), 
+            spaces.Discrete(36), 
+            spaces.MultiBinary(36) # in hand
+            
         ))
         self.action_space = spaces.Discrete(43) # 0 - 34 normal (35), 35-38 waigos (4), 39-42 vishi (4)
 
