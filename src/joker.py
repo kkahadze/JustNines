@@ -222,8 +222,12 @@ def action_to_card(action):
         return Card(13, action - 39)
 
 def play_card(self, playable, action): # new
-    # if action < 34:
-
+    wanted = action_to_card(action)
+    if wanted in playable:
+        playable.remove(wanted)
+        return wanted
+    else:
+        return playable.pop()
     return
 
 class Card(object):
