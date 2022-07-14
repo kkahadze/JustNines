@@ -102,35 +102,6 @@ def playable(self, player):
         firsts.extend(list(filter(lambda x: x.value == 13, all)))
         return firsts
 
-def choose_strg_beat(self, playable): 
-    highest = get_highest(playable, self.first_suit) 
-    return highest if highest else get_highest(playable) 
-
-def choose_weak_beat(self, playable): 
-    beats = self._get_beats(playable) 
-    if not beats:
-        return self._choose_weak_loss(playable)
-    lowest = Card(13, 0)
-    for card in beats:
-        if card.value < lowest.value:
-            lowest = card
-    return lowest
-
-def choose_strg_loss(self, playable): 
-    loses = self._get_loses(playable)
-    if not loses:
-        return self._choose_strg_beat(playable)
-    else:
-        highest = get_highest(playable, suit=self.first_suit)
-        return highest if highest else get_highest(playable)
-
-def choose_weak_loss(self, playable):
-    acc = Card(13, 0)
-    for card in playable:
-        if acc.value > card.value:
-            acc = card
-    return acc
-
 def get_winning_card(self):
     if not self.played.any():
         return None
@@ -236,7 +207,23 @@ def model_predict(model, args_in):
     arg1, arg2, arg3, arg3, arg5, arg6 = args_in
     return model.predict(np.expand_dims([arg1, arg2, arg3, arg3, arg5, arg6],axis=0))
 
-def play_card(self): # new
+def action_to_card(action):
+    if action == 0:
+        return Card(4, 0)
+    elif action == 1:
+        return Card(4, 2)
+    elif action == 34:
+        return Card(13, 0)
+    elif action < 35:
+        return Card((action - 2) // 4 + 5,(action - 2) % 4 )
+    elif action < 39:
+        return Card(3, action - 35)
+    else:
+        return Card(13, action - 39)
+
+def play_card(self, playable, action): # new
+    # if action < 34:
+
     return
 
 class Card(object):
@@ -246,6 +233,7 @@ class Card(object):
 
     def __repr__(self):
         values = {
+            3: lambda: "Five",
             4: lambda: "Six",
             5: lambda: "Seven",
             6: lambda: "Eight",
